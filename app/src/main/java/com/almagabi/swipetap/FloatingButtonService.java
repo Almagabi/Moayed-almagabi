@@ -167,15 +167,7 @@ public class FloatingButtonService extends Service {
                 return true;
             }
             if (e.getAction() == MotionEvent.ACTION_UP && !moved) {
-                long now = System.currentTimeMillis();
-                if (now - lastTriggerTap < 350) {
-                    lastTriggerTap = 0;
-                } else {
-                    lastTriggerTap = now;
-                    handler.postDelayed(() -> {
-                        if (lastTriggerTap == now) SwipeAccessibilityService.requestTap();
-                    }, 350);
-                }
+                SwipeAccessibilityService.requestTap();
                 return true;
             }
 
