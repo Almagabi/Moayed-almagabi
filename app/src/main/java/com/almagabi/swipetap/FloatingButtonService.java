@@ -32,7 +32,7 @@ public class FloatingButtonService extends Service {
         button.setGravity(Gravity.CENTER);
         button.setBackgroundColor(Color.rgb(21, 101, 192));
         button.setOnClickListener(v -> {
-            if (!SwipeAccessibilityService.requestTap()) {
+            if (!SwipeAccessibilityService.requestGesture()) {
                 Toast.makeText(this, "Enable Swipe Tap in Accessibility settings first.",
                         Toast.LENGTH_SHORT).show();
             }
