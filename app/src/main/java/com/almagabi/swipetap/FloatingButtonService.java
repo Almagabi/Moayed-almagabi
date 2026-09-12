@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -17,6 +18,7 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 public class FloatingButtonService extends Service {
+    private static FloatingButtonService instance;
     private WindowManager manager;
     private View target;
     private TextView trigger;
@@ -25,16 +27,12 @@ public class FloatingButtonService extends Service {
     private WindowManager.LayoutParams triggerParams;
     private WindowManager.LayoutParams closeParams;
     private final Handler handler = new Handler();
-    private long lastTriggerTap;
-    private final Runnable hideTrigger = () -> {
-        trigger.setVisibility(View.GONE);
-        close.setVisibility(View.GONE);
-    };
 
     @Override public void onCreate() {
         super.onCreate();
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return; }
         manager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        instance = this;
         createTarget();
         createTrigger();
     }
@@ -64,12 +62,14 @@ public class FloatingButtonService extends Service {
     private void createTrigger() {
         int size = prefs().getInt("trigger_size", 96);
         trigger = new TextView(this);
-        String custom = prefs().getString("custom_icon", "");
-        trigger.setText(custom.isEmpty() ? prefs().getString("icon", "●") : custom);
+        trigger.setText("●");
         trigger.setTextColor(Color.WHITE);
         trigger.setTextSize(Math.max(10, size / 7f));
         trigger.setGravity(Gravity.CENTER);
-        trigger.setBackgroundColor(Color.rgb(210, 35, 45));
+        GradientDrawable circle = new GradientDrawable();
+        circle.setColor(Color.rgb(210, 35, 45));
+        circle.setShape(GradientDrawable.OVAL);
+        trigger.setBackground(circle);
         trigger.setAlpha(prefs().getInt("trigger_opacity", 100) / 100f);
         triggerParams = params(size, size);
         triggerParams.x = coordinate(true, "trigger", 60);
@@ -87,7 +87,6 @@ public class FloatingButtonService extends Service {
         manager.addView(close, closeParams);
         close.setOnClickListener(v -> stopSelf());
         updateClose();
-        showTrigger();
     }
 
     private WindowManager.LayoutParams params(int width, int height) {
@@ -124,24 +123,15 @@ public class FloatingButtonService extends Service {
         if (close.getWindowToken() != null) manager.updateViewLayout(close, closeParams);
     }
 
-    private void showTrigger() {
-        trigger.setVisibility(View.VISIBLE);
-        close.setVisibility(View.VISIBLE);
-        handler.removeCallbacks(hideTrigger);
-        handler.postDelayed(hideTrigger, 4000);
-    }
-
     private final class PositionTouch implements View.OnTouchListener {
         private final View view; private final WindowManager.LayoutParams lp; private final boolean targetPosition;
         private float downX, downY; private int startX, startY;
-        private final Runnable showOnHold = FloatingButtonService.this::showTrigger;
         PositionTouch(View view, WindowManager.LayoutParams lp, boolean targetPosition) {
             this.view = view; this.lp = lp; this.targetPosition = targetPosition;
         }
         @Override public boolean onTouch(View v, MotionEvent e) {
             if (e.getAction() == MotionEvent.ACTION_DOWN) {
                 downX = e.getRawX(); downY = e.getRawY(); startX = lp.x; startY = lp.y;
-                handler.postDelayed(showOnHold, 2000);
                 return true;
             }
             if (e.getAction() == MotionEvent.ACTION_MOVE) {
@@ -153,7 +143,6 @@ public class FloatingButtonService extends Service {
                 return true;
             }
             if (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL) {
-                handler.removeCallbacks(showOnHold);
             }
             return true;
         }
@@ -180,17 +169,31 @@ public class FloatingButtonService extends Service {
             if (e.getAction() == MotionEvent.ACTION_UP && !moved) {
                 long now = System.currentTimeMillis();
                 if (now - lastTriggerTap < 350) {
-                    trigger.setVisibility(trigger.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
-                    close.setVisibility(trigger.getVisibility());
                     lastTriggerTap = 0;
                 } else {
                     lastTriggerTap = now;
                     handler.postDelayed(() -> {
                         if (lastTriggerTap == now) SwipeAccessibilityService.requestTap();
                     }, 350);
-                    showTrigger();
                 }
                 return true;
+            }
+
+            public static void applyTriggerSettings(int size, int opacity) {
+                if (instance == null || instance.trigger == null) return;
+                instance.triggerParams.width = size;
+                instance.triggerParams.height = size;
+                instance.trigger.setAlpha(opacity / 100f);
+                instance.trigger.setTextSize(Math.max(10, size / 7f));
+                instance.manager.updateViewLayout(instance.trigger, instance.triggerParams);
+                instance.updateClose();
+            }
+
+            public static void applyTargetSize(int size) {
+                if (instance == null || instance.target == null) return;
+                instance.targetParams.width = size;
+                instance.targetParams.height = size;
+                instance.manager.updateViewLayout(instance.target, instance.targetParams);
             }
             return true;
         }
@@ -203,6 +206,7 @@ public class FloatingButtonService extends Service {
             if (trigger != null) manager.removeView(trigger);
             if (close != null) manager.removeView(close);
         }
+        if (instance == this) instance = null;
         prefs().edit().putBoolean("running", false).apply();
         super.onDestroy();
     }

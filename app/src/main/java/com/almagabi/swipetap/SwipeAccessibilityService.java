@@ -31,8 +31,10 @@ public class SwipeAccessibilityService extends AccessibilityService {
     private void performConfiguredTap() {
         boolean landscape = getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
-        int x = prefs.getInt(landscape ? "landscape_x" : "portrait_x", landscape ? 806 : 360);
-        int y = prefs.getInt(landscape ? "landscape_y" : "portrait_y", landscape ? 540 : 1200);
+        int x = prefs.getInt(landscape ? "target_landscape_x" : "target_portrait_x",
+                landscape ? 806 : 360);
+        int y = prefs.getInt(landscape ? "target_landscape_y" : "target_portrait_y",
+                landscape ? 540 : 1200);
         Path path = new Path();
         path.moveTo(Math.max(0, x), Math.max(0, y));
         GestureDescription.StrokeDescription stroke =
