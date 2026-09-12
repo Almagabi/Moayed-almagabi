@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -16,7 +18,7 @@ import android.content.res.Configuration;
 
 public class FloatingButtonService extends Service {
     private WindowManager windowManager;
-    private TextView target;
+    private View target;
     private WindowManager.LayoutParams targetParams;
     private TextView trigger;
     private WindowManager.LayoutParams triggerParams;
@@ -32,18 +34,27 @@ public class FloatingButtonService extends Service {
             return;
         }
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        target = new TextView(this);
-        target.setText("TARGET");
-        target.setTextColor(Color.WHITE);
-        target.setTextSize(10);
-        target.setGravity(Gravity.CENTER);
-        target.setBackgroundColor(Color.rgb(46, 125, 50));
+        target = new View(this) {
+            private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+            @Override
+            protected void onDraw(Canvas canvas) {
+                float center = getWidth() / 2f;
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(4);
+                paint.setColor(Color.rgb(46, 125, 50));
+                canvas.drawCircle(center, getHeight() / 2f, center - 5, paint);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(Color.RED);
+                canvas.drawCircle(center, getHeight() / 2f, 7, paint);
+            }
+        };
         targetParams = new WindowManager.LayoutParams(
-                88, 56, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                64, 64, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
         targetParams.gravity = Gravity.TOP | Gravity.START;
-        targetParams.x = Math.max(0, savedCoordinate(true) - 44);
-        targetParams.y = Math.max(0, savedCoordinate(false) - 28);
+        targetParams.x = Math.max(0, savedCoordinate(true) - 32);
+        targetParams.y = Math.max(0, savedCoordinate(false) - 32);
         target.setOnTouchListener(new View.OnTouchListener() {
             private float downX;
             private float downY;
@@ -65,7 +76,7 @@ public class FloatingButtonService extends Service {
                     targetParams.x = Math.max(0, targetParams.x);
                     targetParams.y = Math.max(0, targetParams.y);
                     windowManager.updateViewLayout(target, targetParams);
-                    saveCoordinate(targetParams.x + 44, targetParams.y + 28);
+                    saveCoordinate(targetParams.x + 32, targetParams.y + 32);
                     return true;
                 }
                 return event.getAction() == MotionEvent.ACTION_UP;
