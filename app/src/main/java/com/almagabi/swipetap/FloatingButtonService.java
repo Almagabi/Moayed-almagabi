@@ -21,8 +21,13 @@ public class FloatingButtonService extends Service {
     private View target;
     private WindowManager.LayoutParams targetParams;
     private TextView trigger;
+    private TextView close;
     private WindowManager.LayoutParams triggerParams;
+    private WindowManager.LayoutParams closeParams;
     private final Handler handler = new Handler();
+    private final Runnable hideTarget = () -> {
+        if (target != null) target.setVisibility(View.GONE);
+    };
 
     @Override
     public void onCreate() {
@@ -49,17 +54,21 @@ public class FloatingButtonService extends Service {
                 canvas.drawCircle(center, getHeight() / 2f, 7, paint);
             }
         };
+        target.setAlpha(getSharedPreferences("settings", MODE_PRIVATE)
+                .getInt("target_opacity", 100) / 100f);
+        int targetSize = getSharedPreferences("settings", MODE_PRIVATE).getInt("target_size", 64);
         targetParams = new WindowManager.LayoutParams(
-                64, 64, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                targetSize, targetSize, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
         targetParams.gravity = Gravity.TOP | Gravity.START;
-        targetParams.x = Math.max(0, savedCoordinate(true) - 32);
-        targetParams.y = Math.max(0, savedCoordinate(false) - 32);
+        targetParams.x = Math.max(0, savedCoordinate(true) - targetSize / 2);
+        targetParams.y = Math.max(0, savedCoordinate(false) - targetSize / 2);
         target.setOnTouchListener(new View.OnTouchListener() {
             private float downX;
             private float downY;
             private int initialX;
             private int initialY;
+            private long lastTap;
 
             @Override
             public boolean onTouch(View view, MotionEvent event) {
@@ -76,16 +85,34 @@ public class FloatingButtonService extends Service {
                     targetParams.x = Math.max(0, targetParams.x);
                     targetParams.y = Math.max(0, targetParams.y);
                     windowManager.updateViewLayout(target, targetParams);
-                    saveCoordinate(targetParams.x + 32, targetParams.y + 32);
+                    int center = targetParams.width / 2;
+                    saveCoordinate(targetParams.x + center, targetParams.y + center);
                     return true;
                 }
-                return event.getAction() == MotionEvent.ACTION_UP;
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    long now = System.currentTimeMillis();
+                    if (now - lastTap < 350) {
+                        target.setVisibility(target.getVisibility() == View.VISIBLE
+                                ? View.GONE : View.VISIBLE);
+                        if (target.getVisibility() == View.VISIBLE) scheduleTargetHide();
+                    } else {
+                        scheduleTargetHide();
+                    }
+                    lastTap = now;
+                    return true;
+                }
+                return false;
             }
         });
         windowManager.addView(target, targetParams);
 
         trigger = new TextView(this);
-        trigger.setText("TRIGGER\n(tap/swipe)");
+        String customIcon = getSharedPreferences("settings", MODE_PRIVATE)
+                .getString("custom_icon", "");
+        String icon = customIcon.isEmpty()
+                ? getSharedPreferences("settings", MODE_PRIVATE).getString("icon", "●")
+                : customIcon;
+        trigger.setText(icon);
         trigger.setTextColor(Color.WHITE);
         trigger.setTextSize(10);
         trigger.setGravity(Gravity.CENTER);
@@ -99,23 +126,20 @@ public class FloatingButtonService extends Service {
         trigger.setOnTouchListener(new TriggerTouchListener());
         windowManager.addView(trigger, triggerParams);
 
-        TextView hide = new TextView(this);
-        hide.setText("HIDE");
-        hide.setTextColor(Color.WHITE);
-        hide.setTextSize(10);
-        hide.setGravity(Gravity.CENTER);
-        hide.setBackgroundColor(Color.DKGRAY);
-        WindowManager.LayoutParams hideParams = new WindowManager.LayoutParams(
-                72, 48, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+        close = new TextView(this);
+        close.setText("X");
+        close.setTextColor(Color.WHITE);
+        close.setTextSize(14);
+        close.setGravity(Gravity.CENTER);
+        close.setBackgroundColor(Color.DKGRAY);
+        closeParams = new WindowManager.LayoutParams(
+                40, 40, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
-        hideParams.gravity = Gravity.TOP | Gravity.END;
-        hideParams.x = 12;
-        hideParams.y = 220;
-        hide.setOnClickListener(v -> {
-            if (trigger != null) trigger.setVisibility(View.GONE);
-            v.setVisibility(View.GONE);
-        });
-        windowManager.addView(hide, hideParams);
+        closeParams.gravity = Gravity.TOP | Gravity.START;
+        updateClosePosition();
+        close.setOnClickListener(v -> stopSelf());
+        windowManager.addView(close, closeParams);
+        scheduleTargetHide();
     }
 
     @Override
@@ -126,6 +150,9 @@ public class FloatingButtonService extends Service {
         }
         if (trigger != null && windowManager != null) {
             windowManager.removeView(trigger);
+        }
+        if (close != null && windowManager != null) {
+            windowManager.removeView(close);
         }
         super.onDestroy();
     }
@@ -158,6 +185,24 @@ public class FloatingButtonService extends Service {
                 .apply();
     }
 
+    private void updateClosePosition() {
+        closeParams.x = triggerParams.x + triggerParams.width - 18;
+        closeParams.y = triggerParams.y - 18;
+        if (close != null && windowManager != null) {
+            windowManager.updateViewLayout(close, closeParams);
+        }
+    }
+
+    private void scheduleTargetHide() {
+        handler.removeCallbacks(hideTarget);
+        handler.postDelayed(hideTarget, 4000);
+    }
+
+    private void showTarget() {
+        target.setVisibility(View.VISIBLE);
+        scheduleTargetHide();
+    }
+
     private int savedTrigger(boolean x) {
         boolean landscape = getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
@@ -182,6 +227,7 @@ public class FloatingButtonService extends Service {
         private int initialY;
         private boolean dragging;
         private long downAt;
+        private long lastTap;
 
         @Override
         public boolean onTouch(View view, MotionEvent event) {
@@ -192,6 +238,9 @@ public class FloatingButtonService extends Service {
                 initialY = triggerParams.y;
                 downAt = System.currentTimeMillis();
                 dragging = false;
+                handler.postDelayed(() -> {
+                    if (downAt != 0 && !dragging) showTarget();
+                }, 2000);
                 return true;
             }
             if (event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -202,17 +251,31 @@ public class FloatingButtonService extends Service {
                     triggerParams.x = Math.max(0, initialX + Math.round(event.getRawX() - downX));
                     triggerParams.y = Math.max(0, initialY + Math.round(event.getRawY() - downY));
                     windowManager.updateViewLayout(trigger, triggerParams);
+                    updateClosePosition();
                     saveTrigger(triggerParams.x, triggerParams.y);
                 }
                 return true;
             }
             if (event.getAction() == MotionEvent.ACTION_UP && !dragging) {
+                handler.removeCallbacksAndMessages(null);
+                long now = System.currentTimeMillis();
+                if (now - lastTap < 350) {
+                    if (target.getVisibility() == View.VISIBLE) {
+                        target.setVisibility(View.GONE);
+                    } else {
+                        showTarget();
+                    }
+                    lastTap = 0;
+                    return true;
+                }
+                lastTap = now;
                 String gesture = getSharedPreferences("settings", MODE_PRIVATE)
                         .getString("gesture", "Tap");
                 if ("Tap".equalsIgnoreCase(gesture)
                         || matchesDirection(event.getRawX() - downX, event.getRawY() - downY)) {
                     SwipeAccessibilityService.requestGesture();
                 }
+                scheduleTargetHide();
             }
             return true;
         }
