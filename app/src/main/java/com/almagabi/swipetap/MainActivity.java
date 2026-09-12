@@ -93,7 +93,37 @@ public class MainActivity extends Activity {
         customIcon.setText(prefs.getString("custom_icon", ""));
         root.addView(customIcon);
 
+        root.addView(section("Trigger position and size"));
+        LinearLayout triggerPosition = row();
+        EditText triggerX = numberField("X", prefs.getInt("trigger_portrait_x", 60));
+        EditText triggerY = numberField("Y", prefs.getInt("trigger_portrait_y", 500));
+        triggerPosition.addView(triggerX, weight());
+        triggerPosition.addView(triggerY, weight());
+        root.addView(triggerPosition);
+        TextView triggerSizeLabel = label("", 14);
+        root.addView(triggerSizeLabel);
+        SeekBar triggerSize = new SeekBar(this);
+        triggerSize.setMax(176);
+        triggerSize.setProgress(Math.max(24, prefs.getInt("trigger_size", 96)) - 24);
+        triggerSize.setOnSeekBarChangeListener(seekListener(triggerSizeLabel, "Size: ", 24));
+        root.addView(triggerSize);
+        TextView triggerOpacityLabel = label("", 14);
+        root.addView(triggerOpacityLabel);
+        SeekBar triggerOpacity = new SeekBar(this);
+        triggerOpacity.setMax(100);
+        triggerOpacity.setProgress(prefs.getInt("trigger_opacity", 100));
+        triggerOpacity.setOnSeekBarChangeListener(seekListener(triggerOpacityLabel, "Opacity: ", 0));
+        root.addView(triggerOpacity);
+        triggerSizeLabel.setText("Size: " + (triggerSize.getProgress() + 24) + " px");
+        triggerOpacityLabel.setText("Opacity: " + triggerOpacity.getProgress() + "%");
+
         root.addView(section("Target reticle"));
+        LinearLayout targetPosition = row();
+        EditText targetX = numberField("X", prefs.getInt("target_portrait_x", 360));
+        EditText targetY = numberField("Y", prefs.getInt("target_portrait_y", 1200));
+        targetPosition.addView(targetX, weight());
+        targetPosition.addView(targetY, weight());
+        root.addView(targetPosition);
         TextView sizeLabel = label("", 14);
         root.addView(sizeLabel);
         SeekBar size = new SeekBar(this);
@@ -101,15 +131,7 @@ public class MainActivity extends Activity {
         size.setProgress(Math.max(24, prefs.getInt("target_size", 64)) - 24);
         size.setOnSeekBarChangeListener(seekListener(sizeLabel, "Size: ", 24));
         root.addView(size);
-        TextView opacityLabel = label("", 14);
-        root.addView(opacityLabel);
-        SeekBar opacity = new SeekBar(this);
-        opacity.setMax(100);
-        opacity.setProgress(prefs.getInt("target_opacity", 100));
-        opacity.setOnSeekBarChangeListener(seekListener(opacityLabel, "Opacity: ", 0));
-        root.addView(opacity);
         sizeLabel.setText("Size: " + (size.getProgress() + 24) + " px");
-        opacityLabel.setText("Opacity: " + opacity.getProgress() + "%");
 
         Button save = new Button(this);
         save.setText("Save settings");
@@ -117,8 +139,13 @@ public class MainActivity extends Activity {
             prefs.edit()
                     .putString("icon", icon.getSelectedItem().toString())
                     .putString("custom_icon", customIcon.getText().toString())
+                    .putInt("trigger_portrait_x", value(triggerX, 60))
+                    .putInt("trigger_portrait_y", value(triggerY, 500))
+                    .putInt("trigger_size", triggerSize.getProgress() + 24)
+                    .putInt("trigger_opacity", triggerOpacity.getProgress())
+                    .putInt("target_portrait_x", value(targetX, 360))
+                    .putInt("target_portrait_y", value(targetY, 1200))
                     .putInt("target_size", size.getProgress() + 24)
-                    .putInt("target_opacity", opacity.getProgress())
                     .apply();
             status.setText("Settings saved.");
         });

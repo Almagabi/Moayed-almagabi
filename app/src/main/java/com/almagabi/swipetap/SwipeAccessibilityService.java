@@ -20,7 +20,7 @@ public class SwipeAccessibilityService extends AccessibilityService {
         instance = this;
     }
 
-    public static boolean requestGesture() {
+    public static boolean requestTap() {
         if (instance == null || instance.prefs == null) {
             return false;
         }
