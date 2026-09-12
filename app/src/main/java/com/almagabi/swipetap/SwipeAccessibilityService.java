@@ -2,40 +2,39 @@ package com.almagabi.swipetap;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
-import android.content.SharedPreferences;
-import android.graphics.Path;
 import android.content.res.Configuration;
+import android.graphics.Path;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.accessibility.AccessibilityEvent;
 
 public class SwipeAccessibilityService extends AccessibilityService {
-    private static final String PREFS = "settings";
+    private static SwipeAccessibilityService instance;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private SharedPreferences prefs;
+    private android.content.SharedPreferences prefs;
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        instance = this;
     }
 
-    @Override
-    public boolean onGesture(int gestureId) {
-        if (gestureId == GESTURE_SWIPE_DOWN && prefs != null && prefs.getBoolean("enabled", false)) {
-            int delay = Math.max(0, Math.min(prefs.getInt("delay_ms", 0), 5000));
-            int repeats = Math.max(1, Math.min(prefs.getInt("repeats", 1), 10));
-            for (int i = 0; i < repeats; i++) {
-                final int tapNumber = i;
-                handler.postDelayed(() -> tapConfiguredPoint(), delay + (tapNumber * 120L));
-            }
+    public static boolean requestTap() {
+        if (instance == null || instance.prefs == null) {
+            return false;
         }
-        return super.onGesture(gestureId);
+        int delay = Math.max(0, Math.min(instance.prefs.getInt("delay_ms", 0), 5000));
+        int repeats = Math.max(1, Math.min(instance.prefs.getInt("repeats", 1), 10));
+        for (int i = 0; i < repeats; i++) {
+            instance.handler.postDelayed(instance::tapConfiguredPoint, delay + (i * 120L));
+        }
+        return true;
     }
 
     private void tapConfiguredPoint() {
-        boolean landscape = (getResources().getConfiguration().orientation
-                == Configuration.ORIENTATION_LANDSCAPE);
+        boolean landscape = getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
         int x = prefs.getInt(landscape ? "landscape_x" : "portrait_x", landscape ? 806 : 360);
         int y = prefs.getInt(landscape ? "landscape_y" : "portrait_y", landscape ? 540 : 1200);
         Path path = new Path();
@@ -47,11 +46,18 @@ public class SwipeAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // Gesture callbacks are sufficient; view events are not used.
     }
 
     @Override
     public void onInterrupt() {
         handler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (instance == this) {
+            instance = null;
+        }
+        super.onDestroy();
     }
 }

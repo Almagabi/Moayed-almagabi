@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Swipe Tap</string>
-    <string name="accessibility_description">Detects a downward swipe and taps the configured screen coordinate.</string>
+    <string name="accessibility_description">Allows the floating button to perform one configured tap.</string>
 </resources>
