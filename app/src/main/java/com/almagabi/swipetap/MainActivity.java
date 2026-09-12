@@ -163,17 +163,18 @@ public class MainActivity extends Activity {
         for (int i = 0; i < values.length; i++) {
             if (values[i].equalsIgnoreCase(selected)) spinner.setSelection(i);
         }
-
-        private SeekBar.OnSeekBarChangeListener seekListener(TextView label, String prefix, int offset) {
-            return new SeekBar.OnSeekBarChangeListener() {
-                public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
-                    label.setText(prefix + (progress + offset) + (prefix.startsWith("Opacity") ? "%" : " px"));
-                }
-                public void onStartTrackingTouch(SeekBar bar) {}
-                public void onStopTrackingTouch(SeekBar bar) {}
-            };
-        }
         return spinner;
+    }
+
+    private SeekBar.OnSeekBarChangeListener seekListener(TextView label, String prefix, int offset) {
+        return new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                label.setText(prefix + (progress + offset)
+                        + (prefix.startsWith("Opacity") ? "%" : " px"));
+            }
+            public void onStartTrackingTouch(SeekBar bar) {}
+            public void onStopTrackingTouch(SeekBar bar) {}
+        };
     }
 
     private int value(EditText field, int fallback) {
