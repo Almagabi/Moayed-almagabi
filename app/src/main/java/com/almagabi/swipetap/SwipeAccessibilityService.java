@@ -45,12 +45,7 @@ public class SwipeAccessibilityService extends AccessibilityService {
             int distance = 300;
             int endX = x;
             int endY = y;
-            if ("Custom".equalsIgnoreCase(direction)) {
-                endX = prefs.getInt(landscape ? "landscape_end_x" : "portrait_end_x",
-                        landscape ? 1100 : 360);
-                endY = prefs.getInt(landscape ? "landscape_end_y" : "portrait_end_y",
-                        landscape ? 540 : 900);
-            } else if ("Up".equalsIgnoreCase(direction)) {
+            if ("Up".equalsIgnoreCase(direction)) {
                 endY -= distance;
             } else if ("Left".equalsIgnoreCase(direction)) {
                 endX -= distance;

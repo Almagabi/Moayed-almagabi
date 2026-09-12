@@ -23,8 +23,11 @@ then download the `swipe-tap-debug-apk` artifact from the completed run.
    direction when you want to enter exact swipe end coordinates.
 6. Allow floating windows, press **Start floating TAP button**, and tap the floating
    **TAP** button to perform the configured gesture for the current orientation.
-   Drag the green **TARGET** marker to position the tap/start point manually; its center
-   coordinate is saved automatically.
+   Drag the green **TARGET** marker to position the exact output tap point manually; its
+   center coordinate is saved automatically. The purple **TRIGGER** region is where you
+   perform the input tap or configured swipe. Hold it briefly and drag to reposition it.
+   Press **HIDE** to remove the trigger region after positioning; press **Stop** and
+   **Start** in the app to show it again.
 
 The app does not request global swipe detection or touch exploration, avoiding changes
 to normal touch behavior.

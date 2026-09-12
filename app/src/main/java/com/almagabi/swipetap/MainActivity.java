@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
         root.addView(section("Gesture"));
         Spinner gesture = spinner(new String[]{"Tap", "Swipe"}, prefs.getString("gesture", "Tap"));
         root.addView(gesture);
-        Spinner direction = spinner(new String[]{"Down", "Up", "Left", "Right", "Custom"},
+        Spinner direction = spinner(new String[]{"Down", "Up", "Left", "Right"},
                 prefs.getString("direction", "Down"));
         root.addView(direction, margins(0, 4, 0, 8));
 
@@ -92,11 +92,6 @@ public class MainActivity extends Activity {
         EditText portraitY = numberField("Tap/start Y", prefs.getInt("portrait_y", 1200));
         portrait.addView(portraitX, weight()); portrait.addView(portraitY, weight());
         root.addView(portrait);
-        LinearLayout portraitEnd = row();
-        EditText portraitEndX = numberField("Swipe end X", prefs.getInt("portrait_end_x", 360));
-        EditText portraitEndY = numberField("Swipe end Y", prefs.getInt("portrait_end_y", 900));
-        portraitEnd.addView(portraitEndX, weight()); portraitEnd.addView(portraitEndY, weight());
-        root.addView(portraitEnd);
 
         root.addView(section("Landscape coordinates (1612 x 720)"));
         LinearLayout landscape = row();
@@ -104,11 +99,6 @@ public class MainActivity extends Activity {
         EditText landscapeY = numberField("Tap/start Y", prefs.getInt("landscape_y", 540));
         landscape.addView(landscapeX, weight()); landscape.addView(landscapeY, weight());
         root.addView(landscape);
-        LinearLayout landscapeEnd = row();
-        EditText landscapeEndX = numberField("Swipe end X", prefs.getInt("landscape_end_x", 1100));
-        EditText landscapeEndY = numberField("Swipe end Y", prefs.getInt("landscape_end_y", 540));
-        landscapeEnd.addView(landscapeEndX, weight()); landscapeEnd.addView(landscapeEndY, weight());
-        root.addView(landscapeEnd);
 
         root.addView(section("Timing"));
         LinearLayout timing = row();
@@ -124,12 +114,8 @@ public class MainActivity extends Activity {
             prefs.edit()
                     .putInt("portrait_x", value(portraitX, 360))
                     .putInt("portrait_y", value(portraitY, 1200))
-                    .putInt("portrait_end_x", value(portraitEndX, 360))
-                    .putInt("portrait_end_y", value(portraitEndY, 900))
                     .putInt("landscape_x", value(landscapeX, 806))
                     .putInt("landscape_y", value(landscapeY, 540))
-                    .putInt("landscape_end_x", value(landscapeEndX, 1100))
-                    .putInt("landscape_end_y", value(landscapeEndY, 540))
                     .putString("gesture", gesture.getSelectedItem().toString())
                     .putString("direction", direction.getSelectedItem().toString())
                     .putInt("delay_ms", Math.min(value(delay, 0), 5000))
