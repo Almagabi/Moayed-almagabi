@@ -36,27 +36,22 @@ public class MainActivity extends Activity {
 
         TextView title = label("Swipe Tap", 26);
         root.addView(title);
-        TextView help = label("Use the floating button to tap the configured point over any app.", 16);
+        TextView help = label("Safe overlay preview. Android blocks cross-app taps without Accessibility access.", 16);
         help.setTextColor(Color.DKGRAY);
         root.addView(help, margins(0, 4, 0, 16));
 
         status = label("", 14);
         root.addView(status, margins(0, 0, 0, 10));
 
-        Button accessibility = new Button(this);
-        accessibility.setText("1. Enable tap permission");
-        accessibility.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-        root.addView(accessibility);
-
         Button overlay = new Button(this);
-        overlay.setText("2. Allow floating button");
+        overlay.setText("Allow floating button");
         overlay.setOnClickListener(v -> startActivity(new Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 android.net.Uri.parse("package:" + getPackageName()))));
         root.addView(overlay);
 
         enabled = new CheckBox(this);
-        enabled.setText("Show floating tap button");
+        enabled.setText("Show floating button");
         enabled.setChecked(prefs.getBoolean("enabled", false));
         enabled.setOnCheckedChangeListener((button, checked) -> {
             prefs.edit().putBoolean("enabled", checked).apply();
@@ -115,12 +110,8 @@ public class MainActivity extends Activity {
     }
 
     private void updateStatus() {
-        // Component matching through the enabled-service setting works across Android versions.
-        String enabledServices = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        boolean serviceOn = enabledServices != null && enabledServices.contains(
-                getPackageName() + "/" + SwipeAccessibilityService.class.getName());
-        status.setText(serviceOn ? "Accessibility service is enabled." : "Enable the Accessibility Service to start.");
-        status.setTextColor(serviceOn ? Color.rgb(20, 120, 50) : Color.rgb(170, 70, 20));
+        status.setText("Accessibility is intentionally disabled for device safety.");
+        status.setTextColor(Color.rgb(20, 100, 50));
     }
 
     private TextView section(String text) {

@@ -9,6 +9,7 @@ import android.provider.Settings;
 import android.view.Gravity;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class FloatingButtonService extends Service {
     private WindowManager windowManager;
@@ -29,7 +30,9 @@ public class FloatingButtonService extends Service {
         button.setGravity(Gravity.CENTER);
         button.setBackgroundColor(Color.rgb(21, 101, 192));
         button.setOnClickListener(v -> {
-            SwipeAccessibilityService.requestTap();
+            Toast.makeText(this,
+                    "Android blocks cross-app taps without Accessibility access.",
+                    Toast.LENGTH_SHORT).show();
         });
         int type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
