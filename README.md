@@ -1,8 +1,8 @@
 # Swipe Tap
 
-An Android Accessibility Service that detects a downward swipe and taps a configured
-screen coordinate. It works without root and supports separate portrait and landscape
-coordinates.
+An Android Accessibility Service with a floating tap button that taps a configured
+screen coordinate over other apps. It works without root and supports separate portrait
+and landscape coordinates.
 
 ## Build the APK
 
@@ -16,8 +16,8 @@ then download the `swipe-tap-debug-apk` artifact from the completed run.
    defaults match the supplied 720x1612 portrait and 1612x720 landscape recordings.
 3. Set an optional delay and repeat count, then enable the service.
 4. In Android Accessibility settings, enable **Swipe Tap**.
-5. Turn on **Detection enabled** in the app and swipe down anywhere. The service taps the
-   coordinate for the current orientation.
+5. Return to the app, allow floating windows, and turn on **Show floating tap button**.
+   Tap the floating **TAP** button to tap the coordinate for the current orientation.
 
-The service intentionally only reacts to Android's downward-swipe accessibility gesture.
-Disable **Detection enabled** before using the device normally.
+The app no longer requests global swipe detection. This avoids changing touch behavior
+or triggering touch-exploration compatibility issues on Android 14.

@@ -29,9 +29,7 @@ public class FloatingButtonService extends Service {
         button.setGravity(Gravity.CENTER);
         button.setBackgroundColor(Color.rgb(21, 101, 192));
         button.setOnClickListener(v -> {
-            Intent intent = new Intent(this, SwipeAccessibilityService.class);
-            intent.setAction(SwipeAccessibilityService.ACTION_FLOATING_TAP);
-            startService(intent);
+            SwipeAccessibilityService.requestTap();
         });
         int type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(

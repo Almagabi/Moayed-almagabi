@@ -13,23 +13,31 @@ public class SwipeAccessibilityService extends AccessibilityService {
     private static final String PREFS = "settings";
     private final Handler handler = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
+    private static SwipeAccessibilityService instance;
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        instance = this;
     }
 
     public static final String ACTION_FLOATING_TAP = "com.almagabi.swipetap.FLOATING_TAP";
 
+    public static void requestTap() {
+        if (instance != null && instance.prefs != null) {
+            int delay = Math.max(0, Math.min(instance.prefs.getInt("delay_ms", 0), 5000));
+            int repeats = Math.max(1, Math.min(instance.prefs.getInt("repeats", 1), 10));
+            for (int i = 0; i < repeats; i++) {
+                instance.handler.postDelayed(instance::tapConfiguredPoint, delay + (i * 120L));
+            }
+        }
+    }
+
     @Override
     public int onStartCommand(android.content.Intent intent, int flags, int startId) {
-        if (intent != null && ACTION_FLOATING_TAP.equals(intent.getAction()) && prefs != null) {
-            int delay = Math.max(0, Math.min(prefs.getInt("delay_ms", 0), 5000));
-            int repeats = Math.max(1, Math.min(prefs.getInt("repeats", 1), 10));
-            for (int i = 0; i < repeats; i++) {
-                handler.postDelayed(this::tapConfiguredPoint, delay + (i * 120L));
-            }
+        if (intent != null && ACTION_FLOATING_TAP.equals(intent.getAction())) {
+            requestTap();
         }
         return START_NOT_STICKY;
     }
@@ -54,5 +62,11 @@ public class SwipeAccessibilityService extends AccessibilityService {
     @Override
     public void onInterrupt() {
         handler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void onDestroy() {
+        instance = null;
+        super.onDestroy();
     }
 }
