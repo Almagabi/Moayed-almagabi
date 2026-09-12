@@ -20,27 +20,49 @@ public class SwipeAccessibilityService extends AccessibilityService {
         instance = this;
     }
 
-    public static boolean requestTap() {
+    public static boolean requestGesture() {
         if (instance == null || instance.prefs == null) {
             return false;
         }
         int delay = Math.max(0, Math.min(instance.prefs.getInt("delay_ms", 0), 5000));
         int repeats = Math.max(1, Math.min(instance.prefs.getInt("repeats", 1), 10));
         for (int i = 0; i < repeats; i++) {
-            instance.handler.postDelayed(instance::tapConfiguredPoint, delay + (i * 120L));
+            instance.handler.postDelayed(instance::performConfiguredGesture, delay + (i * 120L));
         }
         return true;
     }
 
-    private void tapConfiguredPoint() {
+    private void performConfiguredGesture() {
         boolean landscape = getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
         int x = prefs.getInt(landscape ? "landscape_x" : "portrait_x", landscape ? 806 : 360);
         int y = prefs.getInt(landscape ? "landscape_y" : "portrait_y", landscape ? 540 : 1200);
+        String gesture = prefs.getString("gesture", "Tap");
         Path path = new Path();
         path.moveTo(Math.max(0, x), Math.max(0, y));
+        if ("Swipe".equalsIgnoreCase(gesture)) {
+            String direction = prefs.getString("direction", "Down");
+            int distance = 300;
+            int endX = x;
+            int endY = y;
+            if ("Custom".equalsIgnoreCase(direction)) {
+                endX = prefs.getInt(landscape ? "landscape_end_x" : "portrait_end_x",
+                        landscape ? 1100 : 360);
+                endY = prefs.getInt(landscape ? "landscape_end_y" : "portrait_end_y",
+                        landscape ? 540 : 900);
+            } else if ("Up".equalsIgnoreCase(direction)) {
+                endY -= distance;
+            } else if ("Left".equalsIgnoreCase(direction)) {
+                endX -= distance;
+            } else if ("Right".equalsIgnoreCase(direction)) {
+                endX += distance;
+            } else {
+                endY += distance;
+            }
+            path.lineTo(Math.max(0, endX), Math.max(0, endY));
+        }
         GestureDescription.StrokeDescription stroke =
-                new GestureDescription.StrokeDescription(path, 0, 50);
+                new GestureDescription.StrokeDescription(path, 0, "Swipe".equalsIgnoreCase(gesture) ? 450 : 50);
         dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
     }
 

@@ -8,6 +8,8 @@ import android.provider.Settings;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
@@ -77,21 +79,36 @@ public class MainActivity extends Activity {
         });
         root.addView(stop);
 
-        root.addView(section("Portrait tap point (720 x 1612)"));
-        LinearLayout portrait = row();
-        EditText portraitX = numberField("X", prefs.getInt("portrait_x", 360));
-        EditText portraitY = numberField("Y", prefs.getInt("portrait_y", 1200));
-        portrait.addView(portraitX, weight());
-        portrait.addView(portraitY, weight());
-        root.addView(portrait);
+        root.addView(section("Gesture"));
+        Spinner gesture = spinner(new String[]{"Tap", "Swipe"}, prefs.getString("gesture", "Tap"));
+        root.addView(gesture);
+        Spinner direction = spinner(new String[]{"Down", "Up", "Left", "Right", "Custom"},
+                prefs.getString("direction", "Down"));
+        root.addView(direction, margins(0, 4, 0, 8));
 
-        root.addView(section("Landscape tap point (1612 x 720)"));
+        root.addView(section("Portrait coordinates (720 x 1612)"));
+        LinearLayout portrait = row();
+        EditText portraitX = numberField("Tap/start X", prefs.getInt("portrait_x", 360));
+        EditText portraitY = numberField("Tap/start Y", prefs.getInt("portrait_y", 1200));
+        portrait.addView(portraitX, weight()); portrait.addView(portraitY, weight());
+        root.addView(portrait);
+        LinearLayout portraitEnd = row();
+        EditText portraitEndX = numberField("Swipe end X", prefs.getInt("portrait_end_x", 360));
+        EditText portraitEndY = numberField("Swipe end Y", prefs.getInt("portrait_end_y", 900));
+        portraitEnd.addView(portraitEndX, weight()); portraitEnd.addView(portraitEndY, weight());
+        root.addView(portraitEnd);
+
+        root.addView(section("Landscape coordinates (1612 x 720)"));
         LinearLayout landscape = row();
-        EditText landscapeX = numberField("X", prefs.getInt("landscape_x", 806));
-        EditText landscapeY = numberField("Y", prefs.getInt("landscape_y", 540));
-        landscape.addView(landscapeX, weight());
-        landscape.addView(landscapeY, weight());
+        EditText landscapeX = numberField("Tap/start X", prefs.getInt("landscape_x", 806));
+        EditText landscapeY = numberField("Tap/start Y", prefs.getInt("landscape_y", 540));
+        landscape.addView(landscapeX, weight()); landscape.addView(landscapeY, weight());
         root.addView(landscape);
+        LinearLayout landscapeEnd = row();
+        EditText landscapeEndX = numberField("Swipe end X", prefs.getInt("landscape_end_x", 1100));
+        EditText landscapeEndY = numberField("Swipe end Y", prefs.getInt("landscape_end_y", 540));
+        landscapeEnd.addView(landscapeEndX, weight()); landscapeEnd.addView(landscapeEndY, weight());
+        root.addView(landscapeEnd);
 
         root.addView(section("Timing"));
         LinearLayout timing = row();
@@ -107,8 +124,14 @@ public class MainActivity extends Activity {
             prefs.edit()
                     .putInt("portrait_x", value(portraitX, 360))
                     .putInt("portrait_y", value(portraitY, 1200))
+                    .putInt("portrait_end_x", value(portraitEndX, 360))
+                    .putInt("portrait_end_y", value(portraitEndY, 900))
                     .putInt("landscape_x", value(landscapeX, 806))
                     .putInt("landscape_y", value(landscapeY, 540))
+                    .putInt("landscape_end_x", value(landscapeEndX, 1100))
+                    .putInt("landscape_end_y", value(landscapeEndY, 540))
+                    .putString("gesture", gesture.getSelectedItem().toString())
+                    .putString("direction", direction.getSelectedItem().toString())
                     .putInt("delay_ms", Math.min(value(delay, 0), 5000))
                     .putInt("repeats", Math.max(1, Math.min(value(repeats, 1), 10)))
                     .apply();
@@ -142,6 +165,15 @@ public class MainActivity extends Activity {
         field.setText(String.valueOf(value));
         field.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         return field;
+    }
+
+    private Spinner spinner(String[] values, String selected) {
+        Spinner spinner = new Spinner(this);
+        spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, values));
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equalsIgnoreCase(selected)) spinner.setSelection(i);
+        }
+        return spinner;
     }
 
     private int value(EditText field, int fallback) {

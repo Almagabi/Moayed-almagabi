@@ -18,8 +18,13 @@ then download the `swipe-tap-debug-apk` artifact from the completed run.
 4. In Android Accessibility settings, enable **Swipe Tap**. The service only performs
    taps requested by the floating button; it does not monitor swipes or request touch
    exploration.
-5. Return to the app, allow floating windows, and turn on **Show floating tap button**.
-   Tap the floating **TAP** button to tap the coordinate for the current orientation.
+5. Return to the app, choose **Tap** or **Swipe**, select a swipe direction, enter
+   portrait and landscape start coordinates, and press **Save settings**. Use **Custom**
+   direction when you want to enter exact swipe end coordinates.
+6. Allow floating windows, press **Start floating TAP button**, and tap the floating
+   **TAP** button to perform the configured gesture for the current orientation.
+   Drag the green **TARGET** marker to position the tap/start point manually; its center
+   coordinate is saved automatically.
 
 The app does not request global swipe detection or touch exploration, avoiding changes
 to normal touch behavior.
