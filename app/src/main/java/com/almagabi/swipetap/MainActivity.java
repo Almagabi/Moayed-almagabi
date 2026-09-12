@@ -1,0 +1,159 @@
+package com.almagabi.swipetap;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+public class MainActivity extends Activity {
+    private static final String PREFS = "settings";
+    private final android.content.SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+    private TextView status;
+    private CheckBox enabled;
+
+    @Override
+    protected void onCreate(Bundle state) {
+        super.onCreate(state);
+        buildScreen();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (status != null) updateStatus();
+    }
+
+    private void buildScreen() {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(20), dp(18), dp(20), dp(18));
+
+        TextView title = label("Swipe Tap", 26);
+        root.addView(title);
+        TextView help = label("Swipe down anywhere to tap a configured point.", 16);
+        help.setTextColor(Color.DKGRAY);
+        root.addView(help, margins(0, 4, 0, 16));
+
+        status = label("", 14);
+        root.addView(status, margins(0, 0, 0, 10));
+
+        Button accessibility = new Button(this);
+        accessibility.setText("Open Accessibility Settings");
+        accessibility.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        root.addView(accessibility);
+
+        enabled = new CheckBox(this);
+        enabled.setText("Detection enabled");
+        enabled.setChecked(prefs.getBoolean("enabled", false));
+        enabled.setOnCheckedChangeListener((button, checked) ->
+                prefs.edit().putBoolean("enabled", checked).apply());
+        root.addView(enabled, margins(0, 12, 0, 8));
+
+        root.addView(section("Portrait tap point (720 x 1612)"));
+        LinearLayout portrait = row();
+        EditText portraitX = numberField("X", prefs.getInt("portrait_x", 360));
+        EditText portraitY = numberField("Y", prefs.getInt("portrait_y", 1200));
+        portrait.addView(portraitX, weight());
+        portrait.addView(portraitY, weight());
+        root.addView(portrait);
+
+        root.addView(section("Landscape tap point (1612 x 720)"));
+        LinearLayout landscape = row();
+        EditText landscapeX = numberField("X", prefs.getInt("landscape_x", 806));
+        EditText landscapeY = numberField("Y", prefs.getInt("landscape_y", 540));
+        landscape.addView(landscapeX, weight());
+        landscape.addView(landscapeY, weight());
+        root.addView(landscape);
+
+        root.addView(section("Timing"));
+        LinearLayout timing = row();
+        EditText delay = numberField("Delay ms", prefs.getInt("delay_ms", 0));
+        EditText repeats = numberField("Repeats", prefs.getInt("repeats", 1));
+        timing.addView(delay, weight());
+        timing.addView(repeats, weight());
+        root.addView(timing);
+
+        Button save = new Button(this);
+        save.setText("Save settings");
+        save.setOnClickListener(v -> {
+            prefs.edit()
+                    .putInt("portrait_x", value(portraitX, 360))
+                    .putInt("portrait_y", value(portraitY, 1200))
+                    .putInt("landscape_x", value(landscapeX, 806))
+                    .putInt("landscape_y", value(landscapeY, 540))
+                    .putInt("delay_ms", Math.min(value(delay, 0), 5000))
+                    .putInt("repeats", Math.max(1, Math.min(value(repeats, 1), 10)))
+                    .apply();
+            status.setText("Settings saved.");
+        });
+        root.addView(save, margins(0, 18, 0, 0));
+        setContentView(root);
+        updateStatus();
+    }
+
+    private void updateStatus() {
+        // Component matching through the enabled-service setting works across Android versions.
+        String enabledServices = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        boolean serviceOn = enabledServices != null && enabledServices.contains(
+                getPackageName() + "/" + SwipeAccessibilityService.class.getName());
+        status.setText(serviceOn ? "Accessibility service is enabled." : "Enable the Accessibility Service to start.");
+        status.setTextColor(serviceOn ? Color.rgb(20, 120, 50) : Color.rgb(170, 70, 20));
+    }
+
+    private TextView section(String text) {
+        TextView view = label(text, 15);
+        view.setTextColor(Color.rgb(30, 80, 140));
+        return view;
+    }
+
+    private EditText numberField(String hint, int value) {
+        EditText field = new EditText(this);
+        field.setHint(hint);
+        field.setText(String.valueOf(value));
+        field.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        return field;
+    }
+
+    private int value(EditText field, int fallback) {
+        try {
+            return Integer.parseInt(field.getText().toString().trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private TextView label(String text, int size) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(size);
+        return view;
+    }
+
+    private LinearLayout row() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        return row;
+    }
+
+    private LinearLayout.LayoutParams weight() {
+        return new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+    }
+
+    private LinearLayout.LayoutParams margins(int left, int top, int right, int bottom) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(dp(left), dp(top), dp(right), dp(bottom));
+        return params;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+}
