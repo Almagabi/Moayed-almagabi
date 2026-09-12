@@ -179,24 +179,25 @@ public class FloatingButtonService extends Service {
                 return true;
             }
 
-            public static void applyTriggerSettings(int size, int opacity) {
-                if (instance == null || instance.trigger == null) return;
-                instance.triggerParams.width = size;
-                instance.triggerParams.height = size;
-                instance.trigger.setAlpha(opacity / 100f);
-                instance.trigger.setTextSize(Math.max(10, size / 7f));
-                instance.manager.updateViewLayout(instance.trigger, instance.triggerParams);
-                instance.updateClose();
-            }
-
-            public static void applyTargetSize(int size) {
-                if (instance == null || instance.target == null) return;
-                instance.targetParams.width = size;
-                instance.targetParams.height = size;
-                instance.manager.updateViewLayout(instance.target, instance.targetParams);
-            }
             return true;
         }
+    }
+
+    public static void applyTriggerSettings(int size, int opacity) {
+        if (instance == null || instance.trigger == null) return;
+        instance.triggerParams.width = size;
+        instance.triggerParams.height = size;
+        instance.trigger.setAlpha(opacity / 100f);
+        instance.trigger.setTextSize(Math.max(10, size / 7f));
+        instance.manager.updateViewLayout(instance.trigger, instance.triggerParams);
+        instance.updateClose();
+    }
+
+    public static void applyTargetSize(int size) {
+        if (instance == null || instance.target == null) return;
+        instance.targetParams.width = size;
+        instance.targetParams.height = size;
+        instance.manager.updateViewLayout(instance.target, instance.targetParams);
     }
 
     @Override public void onDestroy() {
