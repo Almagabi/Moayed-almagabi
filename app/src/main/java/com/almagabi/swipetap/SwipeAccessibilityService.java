@@ -20,17 +20,18 @@ public class SwipeAccessibilityService extends AccessibilityService {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
     }
 
+    public static final String ACTION_FLOATING_TAP = "com.almagabi.swipetap.FLOATING_TAP";
+
     @Override
-    public boolean onGesture(int gestureId) {
-        if (gestureId == GESTURE_SWIPE_DOWN && prefs != null && prefs.getBoolean("enabled", false)) {
+    public int onStartCommand(android.content.Intent intent, int flags, int startId) {
+        if (intent != null && ACTION_FLOATING_TAP.equals(intent.getAction()) && prefs != null) {
             int delay = Math.max(0, Math.min(prefs.getInt("delay_ms", 0), 5000));
             int repeats = Math.max(1, Math.min(prefs.getInt("repeats", 1), 10));
             for (int i = 0; i < repeats; i++) {
-                final int tapNumber = i;
-                handler.postDelayed(() -> tapConfiguredPoint(), delay + (tapNumber * 120L));
+                handler.postDelayed(this::tapConfiguredPoint, delay + (i * 120L));
             }
         }
-        return super.onGesture(gestureId);
+        return START_NOT_STICKY;
     }
 
     private void tapConfiguredPoint() {

@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -37,7 +36,7 @@ public class MainActivity extends Activity {
 
         TextView title = label("Swipe Tap", 26);
         root.addView(title);
-        TextView help = label("Swipe down anywhere to tap a configured point.", 16);
+        TextView help = label("Use the floating button to tap the configured point over any app.", 16);
         help.setTextColor(Color.DKGRAY);
         root.addView(help, margins(0, 4, 0, 16));
 
@@ -45,15 +44,29 @@ public class MainActivity extends Activity {
         root.addView(status, margins(0, 0, 0, 10));
 
         Button accessibility = new Button(this);
-        accessibility.setText("Open Accessibility Settings");
+        accessibility.setText("1. Enable tap permission");
         accessibility.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         root.addView(accessibility);
 
+        Button overlay = new Button(this);
+        overlay.setText("2. Allow floating button");
+        overlay.setOnClickListener(v -> startActivity(new Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                android.net.Uri.parse("package:" + getPackageName()))));
+        root.addView(overlay);
+
         enabled = new CheckBox(this);
-        enabled.setText("Detection enabled");
+        enabled.setText("Show floating tap button");
         enabled.setChecked(prefs.getBoolean("enabled", false));
-        enabled.setOnCheckedChangeListener((button, checked) ->
-                prefs.edit().putBoolean("enabled", checked).apply());
+        enabled.setOnCheckedChangeListener((button, checked) -> {
+            prefs.edit().putBoolean("enabled", checked).apply();
+            Intent service = new Intent(this, FloatingButtonService.class);
+            if (checked && Settings.canDrawOverlays(this)) {
+                startService(service);
+            } else {
+                stopService(service);
+            }
+        });
         root.addView(enabled, margins(0, 12, 0, 8));
 
         root.addView(section("Portrait tap point (720 x 1612)"));
@@ -92,6 +105,9 @@ public class MainActivity extends Activity {
                     .putInt("repeats", Math.max(1, Math.min(value(repeats, 1), 10)))
                     .apply();
             status.setText("Settings saved.");
+            if (enabled.isChecked() && Settings.canDrawOverlays(this)) {
+                startService(new Intent(this, FloatingButtonService.class));
+            }
         });
         root.addView(save, margins(0, 18, 0, 0));
         setContentView(root);
