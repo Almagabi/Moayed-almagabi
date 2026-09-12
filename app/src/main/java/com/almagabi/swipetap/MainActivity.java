@@ -8,8 +8,7 @@ import android.provider.Settings;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
-import android.widget.ArrayAdapter;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
@@ -79,47 +78,47 @@ public class MainActivity extends Activity {
         });
         root.addView(stop);
 
-        root.addView(section("Gesture"));
-        Spinner gesture = spinner(new String[]{"Tap", "Swipe"}, prefs.getString("gesture", "Tap"));
-        root.addView(gesture);
-        Spinner direction = spinner(new String[]{"Down", "Up", "Left", "Right"},
-                prefs.getString("direction", "Down"));
-        root.addView(direction, margins(0, 4, 0, 8));
+        root.addView(section("Floating trigger button"));
+        android.widget.Spinner icon = new android.widget.Spinner(this);
+        icon.setAdapter(new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"●", "▶", "Ⅱ", "⏭", "■", ">>", "<<"}));
+        String savedIcon = prefs.getString("icon", "●");
+        for (int i = 0; i < icon.getCount(); i++) {
+            if (icon.getItemAtPosition(i).toString().equals(savedIcon)) icon.setSelection(i);
+        }
+        root.addView(icon);
+        EditText customIcon = new EditText(this);
+        customIcon.setHint("Custom emoji or symbol (optional)");
+        customIcon.setText(prefs.getString("custom_icon", ""));
+        root.addView(customIcon);
 
-        root.addView(section("Portrait coordinates (720 x 1612)"));
-        LinearLayout portrait = row();
-        EditText portraitX = numberField("Tap/start X", prefs.getInt("portrait_x", 360));
-        EditText portraitY = numberField("Tap/start Y", prefs.getInt("portrait_y", 1200));
-        portrait.addView(portraitX, weight()); portrait.addView(portraitY, weight());
-        root.addView(portrait);
-
-        root.addView(section("Landscape coordinates (1612 x 720)"));
-        LinearLayout landscape = row();
-        EditText landscapeX = numberField("Tap/start X", prefs.getInt("landscape_x", 806));
-        EditText landscapeY = numberField("Tap/start Y", prefs.getInt("landscape_y", 540));
-        landscape.addView(landscapeX, weight()); landscape.addView(landscapeY, weight());
-        root.addView(landscape);
-
-        root.addView(section("Timing"));
-        LinearLayout timing = row();
-        EditText delay = numberField("Delay ms", prefs.getInt("delay_ms", 0));
-        EditText repeats = numberField("Repeats", prefs.getInt("repeats", 1));
-        timing.addView(delay, weight());
-        timing.addView(repeats, weight());
-        root.addView(timing);
+        root.addView(section("Target reticle"));
+        TextView sizeLabel = label("", 14);
+        root.addView(sizeLabel);
+        SeekBar size = new SeekBar(this);
+        size.setMax(160);
+        size.setProgress(Math.max(24, prefs.getInt("target_size", 64)) - 24);
+        size.setOnSeekBarChangeListener(seekListener(sizeLabel, "Size: ", 24));
+        root.addView(size);
+        TextView opacityLabel = label("", 14);
+        root.addView(opacityLabel);
+        SeekBar opacity = new SeekBar(this);
+        opacity.setMax(100);
+        opacity.setProgress(prefs.getInt("target_opacity", 100));
+        opacity.setOnSeekBarChangeListener(seekListener(opacityLabel, "Opacity: ", 0));
+        root.addView(opacity);
+        sizeLabel.setText("Size: " + (size.getProgress() + 24) + " px");
+        opacityLabel.setText("Opacity: " + opacity.getProgress() + "%");
 
         Button save = new Button(this);
         save.setText("Save settings");
         save.setOnClickListener(v -> {
             prefs.edit()
-                    .putInt("portrait_x", value(portraitX, 360))
-                    .putInt("portrait_y", value(portraitY, 1200))
-                    .putInt("landscape_x", value(landscapeX, 806))
-                    .putInt("landscape_y", value(landscapeY, 540))
-                    .putString("gesture", gesture.getSelectedItem().toString())
-                    .putString("direction", direction.getSelectedItem().toString())
-                    .putInt("delay_ms", Math.min(value(delay, 0), 5000))
-                    .putInt("repeats", Math.max(1, Math.min(value(repeats, 1), 10)))
+                    .putString("icon", icon.getSelectedItem().toString())
+                    .putString("custom_icon", customIcon.getText().toString())
+                    .putInt("target_size", size.getProgress() + 24)
+                    .putInt("target_opacity", opacity.getProgress())
                     .apply();
             status.setText("Settings saved.");
         });
@@ -153,13 +152,15 @@ public class MainActivity extends Activity {
         return field;
     }
 
-    private Spinner spinner(String[] values, String selected) {
-        Spinner spinner = new Spinner(this);
-        spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, values));
-        for (int i = 0; i < values.length; i++) {
-            if (values[i].equalsIgnoreCase(selected)) spinner.setSelection(i);
-        }
-        return spinner;
+    private SeekBar.OnSeekBarChangeListener seekListener(TextView label, String prefix, int offset) {
+        return new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                label.setText(prefix + (progress + offset)
+                        + (prefix.startsWith("Opacity") ? "%" : " px"));
+            }
+            public void onStartTrackingTouch(SeekBar bar) {}
+            public void onStopTrackingTouch(SeekBar bar) {}
+        };
     }
 
     private int value(EditText field, int fallback) {
