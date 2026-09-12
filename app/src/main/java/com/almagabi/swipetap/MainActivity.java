@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
 
         TextView title = label("Swipe Tap", 26);
         root.addView(title);
-        TextView help = label("Safe overlay preview. Android blocks cross-app taps without Accessibility access.", 16);
+        TextView help = label("Choose coordinates, enable Accessibility, then use the floating TAP button.", 16);
         help.setTextColor(Color.DKGRAY);
         root.addView(help, margins(0, 4, 0, 16));
 
@@ -49,6 +49,12 @@ public class MainActivity extends Activity {
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 android.net.Uri.parse("package:" + getPackageName()))));
         root.addView(overlay);
+
+        Button accessibility = new Button(this);
+        accessibility.setText("Enable Accessibility tap service");
+        accessibility.setOnClickListener(v ->
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        root.addView(accessibility);
 
         enabled = new CheckBox(this);
         enabled.setText("Show floating button");
@@ -110,8 +116,14 @@ public class MainActivity extends Activity {
     }
 
     private void updateStatus() {
-        status.setText("Accessibility is intentionally disabled for device safety.");
-        status.setTextColor(Color.rgb(20, 100, 50));
+        String enabledServices = Settings.Secure.getString(
+                getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        boolean serviceOn = enabledServices != null && enabledServices.contains(
+                getPackageName() + "/" + SwipeAccessibilityService.class.getName());
+        status.setText(serviceOn
+                ? "Accessibility tap service is enabled."
+                : "Enable the Accessibility tap service before tapping.");
+        status.setTextColor(serviceOn ? Color.rgb(20, 100, 50) : Color.rgb(170, 70, 20));
     }
 
     private TextView section(String text) {

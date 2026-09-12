@@ -15,9 +15,11 @@ then download the `swipe-tap-debug-apk` artifact from the completed run.
 2. Set the portrait and landscape tap coordinates. Coordinates are screen pixels; the
    defaults match the supplied 720x1612 portrait and 1612x720 landscape recordings.
 3. Set an optional delay and repeat count, then enable the service.
-4. In Android Accessibility settings, enable **Swipe Tap**.
+4. In Android Accessibility settings, enable **Swipe Tap**. The service only performs
+   taps requested by the floating button; it does not monitor swipes or request touch
+   exploration.
 5. Return to the app, allow floating windows, and turn on **Show floating tap button**.
    Tap the floating **TAP** button to tap the coordinate for the current orientation.
 
-The app no longer requests global swipe detection. This avoids changing touch behavior
-or triggering touch-exploration compatibility issues on Android 14.
+The app does not request global swipe detection or touch exploration, avoiding changes
+to normal touch behavior.
