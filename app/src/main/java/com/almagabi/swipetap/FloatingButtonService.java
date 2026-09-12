@@ -11,6 +11,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -53,8 +55,8 @@ public class FloatingButtonService extends Service {
             }
         };
         targetParams = params(size, size);
-        targetParams.x = Math.max(0, coordinate(true, "target", 360) - size / 2);
-        targetParams.y = Math.max(0, coordinate(false, "target", 1200) - size / 2);
+        targetParams.x = clampX(coordinate(true, "target", 360) - size / 2, size);
+        targetParams.y = clampY(coordinate(false, "target", 1200) - size / 2, size);
         target.setOnTouchListener(new PositionTouch(target, targetParams, true));
         manager.addView(target, targetParams);
     }
@@ -72,8 +74,8 @@ public class FloatingButtonService extends Service {
         trigger.setBackground(circle);
         trigger.setAlpha(prefs().getInt("trigger_opacity", 100) / 100f);
         triggerParams = params(size, size);
-        triggerParams.x = coordinate(true, "trigger", 60);
-        triggerParams.y = coordinate(false, "trigger", 500);
+        triggerParams.x = clampX(coordinate(true, "trigger", 60), size);
+        triggerParams.y = clampY(coordinate(false, "trigger", 500), size);
         trigger.setOnTouchListener(new TriggerTouch());
         manager.addView(trigger, triggerParams);
 
@@ -90,10 +92,34 @@ public class FloatingButtonService extends Service {
     }
 
     private WindowManager.LayoutParams params(int width, int height) {
-        return new WindowManager.LayoutParams(width, height,
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(width, height,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
+        lp.gravity = Gravity.TOP | Gravity.START;
+        return lp;
+    }
+
+    private int displayWidth() {
+        Display display = manager.getDefaultDisplay();
+        DisplayMetrics metrics = new DisplayMetrics();
+        display.getRealMetrics(metrics);
+        return metrics.widthPixels;
+    }
+
+    private int displayHeight() {
+        Display display = manager.getDefaultDisplay();
+        DisplayMetrics metrics = new DisplayMetrics();
+        display.getRealMetrics(metrics);
+        return metrics.heightPixels;
+    }
+
+    private int clampX(int x, int width) {
+        return Math.max(0, Math.min(x, Math.max(0, displayWidth() - width)));
+    }
+
+    private int clampY(int y, int height) {
+        return Math.max(0, Math.min(y, Math.max(0, displayHeight() - height)));
     }
 
     private android.content.SharedPreferences prefs() {
@@ -135,8 +161,12 @@ public class FloatingButtonService extends Service {
                 return true;
             }
             if (e.getAction() == MotionEvent.ACTION_MOVE) {
-                lp.x = Math.max(0, startX + Math.round(e.getRawX() - downX));
-                lp.y = Math.max(0, startY + Math.round(e.getRawY() - downY));
+                lp.x = clampX(
+                        startX + Math.round(e.getRawX() - downX),
+                        lp.width);
+                lp.y = clampY(
+                        startY + Math.round(e.getRawY() - downY),
+                        lp.height);
                 manager.updateViewLayout(view, lp);
                 savePosition(targetPosition ? "target" : "trigger", lp.x, lp.y, lp.width);
                 if (!targetPosition) updateClose();
@@ -158,8 +188,12 @@ public class FloatingButtonService extends Service {
             if (e.getAction() == MotionEvent.ACTION_MOVE) {
                 if (Math.abs(e.getRawX() - downX) > 12 || Math.abs(e.getRawY() - downY) > 12) {
                     moved = true;
-                    triggerParams.x = Math.max(0, startX + Math.round(e.getRawX() - downX));
-                    triggerParams.y = Math.max(0, startY + Math.round(e.getRawY() - downY));
+                    triggerParams.x = clampX(
+                            startX + Math.round(e.getRawX() - downX),
+                            triggerParams.width);
+                    triggerParams.y = clampY(
+                            startY + Math.round(e.getRawY() - downY),
+                            triggerParams.height);
                     manager.updateViewLayout(trigger, triggerParams);
                     savePosition("trigger", triggerParams.x, triggerParams.y, triggerParams.width);
                     updateClose();
@@ -179,6 +213,8 @@ public class FloatingButtonService extends Service {
         if (instance == null || instance.trigger == null) return;
         instance.triggerParams.width = size;
         instance.triggerParams.height = size;
+        instance.triggerParams.x = instance.clampX(instance.triggerParams.x, size);
+        instance.triggerParams.y = instance.clampY(instance.triggerParams.y, size);
         instance.trigger.setAlpha(opacity / 100f);
         instance.trigger.setTextSize(Math.max(10, size / 7f));
         instance.manager.updateViewLayout(instance.trigger, instance.triggerParams);
@@ -189,6 +225,8 @@ public class FloatingButtonService extends Service {
         if (instance == null || instance.target == null) return;
         instance.targetParams.width = size;
         instance.targetParams.height = size;
+        instance.targetParams.x = instance.clampX(instance.targetParams.x, size);
+        instance.targetParams.y = instance.clampY(instance.targetParams.y, size);
         instance.manager.updateViewLayout(instance.target, instance.targetParams);
     }
 
