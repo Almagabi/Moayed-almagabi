@@ -18,7 +18,9 @@ public class FloatingButtonService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        getSharedPreferences("settings", MODE_PRIVATE).edit().putBoolean("running", true).apply();
         if (!Settings.canDrawOverlays(this)) {
+            getSharedPreferences("settings", MODE_PRIVATE).edit().putBoolean("running", false).apply();
             stopSelf();
             return;
         }
@@ -47,6 +49,7 @@ public class FloatingButtonService extends Service {
 
     @Override
     public void onDestroy() {
+        getSharedPreferences("settings", MODE_PRIVATE).edit().putBoolean("running", false).apply();
         if (button != null && windowManager != null) {
             windowManager.removeView(button);
         }

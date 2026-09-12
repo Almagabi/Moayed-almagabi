@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -15,7 +14,6 @@ public class MainActivity extends Activity {
     private static final String PREFS = "settings";
     private android.content.SharedPreferences prefs;
     private TextView status;
-    private CheckBox enabled;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -57,19 +55,27 @@ public class MainActivity extends Activity {
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         root.addView(accessibility);
 
-        enabled = new CheckBox(this);
-        enabled.setText("Show floating button");
-        enabled.setChecked(prefs.getBoolean("enabled", false));
-        enabled.setOnCheckedChangeListener((button, checked) -> {
-            prefs.edit().putBoolean("enabled", checked).apply();
-            Intent service = new Intent(this, FloatingButtonService.class);
-            if (checked && Settings.canDrawOverlays(this)) {
-                startService(service);
+        Button start = new Button(this);
+        start.setText("Start floating TAP button");
+        start.setOnClickListener(v -> {
+            if (Settings.canDrawOverlays(this)) {
+                prefs.edit().putBoolean("running", true).apply();
+                startService(new Intent(this, FloatingButtonService.class));
+                status.setText("Running. Tap Stop to remove the floating button.");
             } else {
-                stopService(service);
+                status.setText("Allow floating windows before starting.");
             }
         });
-        root.addView(enabled, margins(0, 12, 0, 8));
+        root.addView(start, margins(0, 12, 0, 0));
+
+        Button stop = new Button(this);
+        stop.setText("Stop");
+        stop.setOnClickListener(v -> {
+            prefs.edit().putBoolean("running", false).apply();
+            stopService(new Intent(this, FloatingButtonService.class));
+            status.setText("Stopped. No floating button is running.");
+        });
+        root.addView(stop);
 
         root.addView(section("Portrait tap point (720 x 1612)"));
         LinearLayout portrait = row();
@@ -107,9 +113,6 @@ public class MainActivity extends Activity {
                     .putInt("repeats", Math.max(1, Math.min(value(repeats, 1), 10)))
                     .apply();
             status.setText("Settings saved.");
-            if (enabled.isChecked() && Settings.canDrawOverlays(this)) {
-                startService(new Intent(this, FloatingButtonService.class));
-            }
         });
         root.addView(save, margins(0, 18, 0, 0));
         setContentView(root);
