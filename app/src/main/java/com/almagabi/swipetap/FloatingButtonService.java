@@ -201,7 +201,9 @@ public class FloatingButtonService extends Service {
                 return true;
             }
             if (e.getAction() == MotionEvent.ACTION_UP && !moved) {
-                SwipeAccessibilityService.requestTap();
+                SwipeAccessibilityService.requestTapAt(
+                        targetParams.x + targetParams.width / 2,
+                        targetParams.y + targetParams.height / 2);
                 return true;
             }
 

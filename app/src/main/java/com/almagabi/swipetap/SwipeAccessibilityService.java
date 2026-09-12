@@ -28,6 +28,14 @@ public class SwipeAccessibilityService extends AccessibilityService {
         return true;
     }
 
+    public static boolean requestTapAt(int x, int y) {
+        if (instance == null) {
+            return false;
+        }
+        instance.handler.post(() -> instance.performTapAt(x, y));
+        return true;
+    }
+
     private void performConfiguredTap() {
         boolean landscape = getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
@@ -35,6 +43,10 @@ public class SwipeAccessibilityService extends AccessibilityService {
                 landscape ? 806 : 360);
         int y = prefs.getInt(landscape ? "target_landscape_y" : "target_portrait_y",
                 landscape ? 540 : 1200);
+        performTapAt(x, y);
+    }
+
+    private void performTapAt(int x, int y) {
         Path path = new Path();
         path.moveTo(Math.max(0, x), Math.max(0, y));
         GestureDescription.StrokeDescription stroke =
