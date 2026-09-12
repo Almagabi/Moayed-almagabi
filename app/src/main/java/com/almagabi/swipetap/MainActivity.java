@@ -8,8 +8,6 @@ import android.provider.Settings;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
-import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -80,16 +78,15 @@ public class MainActivity extends Activity {
         });
         root.addView(stop);
 
-        root.addView(section("Trigger gesture"));
-        Spinner gesture = spinner(new String[]{"Tap", "Swipe"}, prefs.getString("gesture", "Tap"));
-        root.addView(gesture);
-        Spinner direction = spinner(new String[]{"Down", "Up", "Left", "Right"},
-                prefs.getString("direction", "Down"));
-        root.addView(direction, margins(0, 4, 0, 8));
-
         root.addView(section("Floating trigger button"));
-        Spinner icon = spinner(new String[]{"●", "▶", "Ⅱ", "⏭", "■", ">>", "<<"},
-                prefs.getString("icon", "●"));
+        android.widget.Spinner icon = new android.widget.Spinner(this);
+        icon.setAdapter(new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"●", "▶", "Ⅱ", "⏭", "■", ">>", "<<"}));
+        String savedIcon = prefs.getString("icon", "●");
+        for (int i = 0; i < icon.getCount(); i++) {
+            if (icon.getItemAtPosition(i).toString().equals(savedIcon)) icon.setSelection(i);
+        }
         root.addView(icon);
         EditText customIcon = new EditText(this);
         customIcon.setHint("Custom emoji or symbol (optional)");
@@ -118,8 +115,6 @@ public class MainActivity extends Activity {
         save.setText("Save settings");
         save.setOnClickListener(v -> {
             prefs.edit()
-                    .putString("gesture", gesture.getSelectedItem().toString())
-                    .putString("direction", direction.getSelectedItem().toString())
                     .putString("icon", icon.getSelectedItem().toString())
                     .putString("custom_icon", customIcon.getText().toString())
                     .putInt("target_size", size.getProgress() + 24)
@@ -155,15 +150,6 @@ public class MainActivity extends Activity {
         field.setText(String.valueOf(value));
         field.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         return field;
-    }
-
-    private Spinner spinner(String[] values, String selected) {
-        Spinner spinner = new Spinner(this);
-        spinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, values));
-        for (int i = 0; i < values.length; i++) {
-            if (values[i].equalsIgnoreCase(selected)) spinner.setSelection(i);
-        }
-        return spinner;
     }
 
     private SeekBar.OnSeekBarChangeListener seekListener(TextView label, String prefix, int offset) {

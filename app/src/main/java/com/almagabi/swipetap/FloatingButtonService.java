@@ -136,9 +136,9 @@ public class FloatingButtonService extends Service {
                 40, 40, type(), WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
         closeParams.gravity = Gravity.TOP | Gravity.START;
-        updateClosePosition();
         close.setOnClickListener(v -> stopSelf());
         windowManager.addView(close, closeParams);
+        updateClosePosition();
         scheduleTargetHide();
     }
 
@@ -269,25 +269,11 @@ public class FloatingButtonService extends Service {
                     return true;
                 }
                 lastTap = now;
-                String gesture = getSharedPreferences("settings", MODE_PRIVATE)
-                        .getString("gesture", "Tap");
-                if ("Tap".equalsIgnoreCase(gesture)
-                        || matchesDirection(event.getRawX() - downX, event.getRawY() - downY)) {
-                    SwipeAccessibilityService.requestGesture();
-                }
+                SwipeAccessibilityService.requestGesture();
                 scheduleTargetHide();
             }
             return true;
         }
 
-        private boolean matchesDirection(float dx, float dy) {
-            if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return false;
-            String direction = getSharedPreferences("settings", MODE_PRIVATE)
-                    .getString("direction", "Down");
-            if ("Up".equalsIgnoreCase(direction)) return dy < -30;
-            if ("Left".equalsIgnoreCase(direction)) return dx < -30;
-            if ("Right".equalsIgnoreCase(direction)) return dx > 30;
-            return dy > 30;
-        }
     }
 }

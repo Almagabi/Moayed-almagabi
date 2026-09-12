@@ -24,11 +24,11 @@ public class SwipeAccessibilityService extends AccessibilityService {
         if (instance == null || instance.prefs == null) {
             return false;
         }
-        instance.handler.post(instance::performConfiguredGesture);
+        instance.handler.post(instance::performConfiguredTap);
         return true;
     }
 
-    private void performConfiguredGesture() {
+    private void performConfiguredTap() {
         boolean landscape = getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
         int x = prefs.getInt(landscape ? "landscape_x" : "portrait_x", landscape ? 806 : 360);
