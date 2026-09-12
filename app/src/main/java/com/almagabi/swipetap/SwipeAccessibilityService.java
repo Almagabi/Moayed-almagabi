@@ -18,11 +18,6 @@ public class SwipeAccessibilityService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
-        if (info != null) {
-            info.flags |= android.accessibilityservice.AccessibilityServiceInfo.FLAG_REQUEST_TOUCH_EXPLORATION_MODE;
-            setServiceInfo(info);
-        }
     }
 
     @Override

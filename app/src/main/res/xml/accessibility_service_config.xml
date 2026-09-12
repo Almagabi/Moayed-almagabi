@@ -2,7 +2,6 @@
     android:accessibilityEventTypes="typeAllMask"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canPerformGestures="true"
-    android:canRequestTouchExplorationMode="true"
     android:description="@string/accessibility_description"
     android:notificationTimeout="100"
     android:settingsActivity="com.almagabi.swipetap.MainActivity" />
