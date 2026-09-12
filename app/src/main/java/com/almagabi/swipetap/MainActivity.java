@@ -13,13 +13,14 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
     private static final String PREFS = "settings";
-    private final android.content.SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+    private android.content.SharedPreferences prefs;
     private TextView status;
     private CheckBox enabled;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         buildScreen();
     }
 
